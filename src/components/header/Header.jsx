@@ -3,17 +3,10 @@ import "./header.css";
 
 function Header() {
   return (
-    <header className="header">
-      <h1>Panel de Control</h1>
-      <div className="user-info">
-        <img
-          src="https://via.placeholder.com/40"
-          alt="user"
-          className="user-avatar"
-        />
-        <span>Admin</span>
-      </div>
-    </header>
+    <div className="header">
+      <h1>Dashboard Asistencia</h1>
+      <div>{/* Aquí puedes poner botones o perfil */}</div>
+    </div>
   );
 }
 

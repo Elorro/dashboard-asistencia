@@ -1,29 +1,26 @@
+/* Desktop por defecto: sidebar visible */
 .sidebar {
-    width: 220px;
-    height: 100vh;
-    background-color: #1e1e2f;
-    color: white;
+    width: 250px;
+    background-color: #007bff;
+    color: #fff;
+    min-height: 100vh;
     padding: 20px;
+    box-sizing: border-box;
     position: fixed;
+    left: 0;
+    top: 0;
+    transition: transform 0.3s ease;
+    transform: translateX(0);
+    /* visible por defecto */
 }
 
-.sidebar h2 {
-    text-align: center;
-    margin-bottom: 40px;
-}
+/* Moviles: oculto por defecto */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
 
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-}
-
-.sidebar li {
-    padding: 10px 0;
-    cursor: pointer;
-}
-
-.sidebar li:hover {
-    background-color: #2f2f4f;
-    border-radius: 5px;
-    padding-left: 10px;
+    .sidebar.open {
+        transform: translateX(0);
+    }
 }

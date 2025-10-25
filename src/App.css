@@ -1,38 +1,55 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+.app-container {
+  display: flex;
   min-height: 100vh;
+}
+
+/* Sidebar toggleable */
+.sidebar {
+  width: 250px;
+  background-color: #007bff;
+  color: white;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Desktop: contenido empujado */
+.main-content {
+  flex: 1;
+  margin-left: 0;
+  transition: margin-left 0.3s ease;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+/* Cuando sidebar está abierto */
+.main-content.sidebar-open {
+  margin-left: 250px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Wrapper para dashboard */
+.dashboard-wrapper {
+  padding: 20px;
+  flex: 1;
+  /* ocupa todo el espacio disponible */
+}
+
+/* Móvil: sidebar oculto por defecto */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
   }
-  to {
-    transform: rotate(360deg);
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content.sidebar-open {
+    margin-left: 0;
   }
 }
