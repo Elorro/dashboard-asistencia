@@ -1,0 +1,64 @@
+{
+  "compilerOptions": {
+    /* ======================================
+       🌐 Compatibilidad general
+       ====================================== */
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node", // ✅ Permite imports sin .js
+    "jsx": "react-jsx", // JSX moderno para React 17+
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ], // Reconoce etiquetas HTML y APIs de navegador
+    /* ======================================
+       ⚙️ Tipado y validación
+       ====================================== */
+    "strict": true,
+    "noImplicitAny": true,
+    "skipLibCheck": true, // Ignora errores de dependencias externas
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true, // ✅ Corrige "export = React" y styled-components
+    "esModuleInterop": true, // ✅ Permite importaciones comunes de librerías CJS
+    "resolveJsonModule": true, // Permite importar JSON directamente
+    /* ======================================
+       🧱 Configuración Vite / TS
+       ====================================== */
+    "isolatedModules": true,
+    "noEmit": true, // Vite se encarga del build
+    "sourceMap": true, // Permite depuración en el navegador
+    /* ======================================
+       🗂️ Rutas y alias
+       ====================================== */
+    "baseUrl": "./src",
+    "paths": {
+      "@components/*": [
+        "components/*"
+      ],
+      "@context/*": [
+        "context/*"
+      ],
+      "@api/*": [
+        "api/*"
+      ],
+      "@styles/*": [
+        "styles/*"
+      ],
+      "@assets/*": [
+        "assets/*"
+      ]
+    }
+  },
+  /* ======================================
+     🧩 Archivos incluidos / excluidos
+     ====================================== */
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ]
+}
