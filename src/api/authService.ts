@@ -137,8 +137,31 @@ export async function loginRequest(
   if (MOCK_FLAG) {
     return loginMock(credentials);
   }
-  const { data } = await api.post<AuthResponse>("/auth/login", credentials);
-  return data;
+
+  // API requires application/x-www-form-urlencoded format with username field
+  const formData = new URLSearchParams();
+  formData.append('username', credentials.email);
+  formData.append('password', credentials.password);
+
+  const { data } = await api.post<{ access_token: string; token_type: string }>(
+    "/admin/login",
+    formData,
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    }
+  );
+
+  // Transform API response to match AuthResponse interface
+  return {
+    user: {
+      id: credentials.email,
+      email: credentials.email,
+    },
+    accessToken: data.access_token,
+    refreshToken: null,
+  };
 }
 
 export async function registerRequest(
