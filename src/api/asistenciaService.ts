@@ -84,6 +84,54 @@ export interface DeactivateDeviceResponse {
   message: string;
 }
 
+export interface AttendanceMetric {
+  metrics_id: string;
+  tenant_id: string;
+  device_id: string;
+  local_id: number;
+  attendance_record_id: string | null;
+  employee_id: string | null;
+  employee_id_number: string | null;
+  timestamp: number;
+  recognition_successful: boolean;
+  rejected_by_user: boolean;
+  metrics: {
+    overall_quality: number;
+    blur_score: number;
+    brightness_score: number;
+    confidence: number | null;
+    euclidean_distance: number | null;
+    embedding_index: number | null;
+    processing_time_ms: number;
+    face_size_score: number;
+    pose_score: number;
+    head_euler_angles: {
+      x: number;
+      y: number;
+      z: number;
+    };
+    used_faiss: boolean;
+    threshold_used: number | null;
+  };
+  synced_at: number;
+}
+
+export interface AttendanceMetricsResponse {
+  success: boolean;
+  count: number;
+  metrics: AttendanceMetric[];
+}
+
+export interface AttendanceMetricsFilters {
+  device_id?: string;
+  employee_id?: string;
+  recognition_successful?: boolean;
+  rejected_by_user?: boolean;
+  start_timestamp?: number;
+  end_timestamp?: number;
+  limit?: number;
+}
+
 export interface DashboardMetrics {
   totalRegistrados: number;
   registradosUltimos7: number;
@@ -342,4 +390,42 @@ export async function desactivarDispositivo(
   });
   await throwIfNotOk(res);
   return res.json();
+}
+
+/* =============================
+   Métricas de Asistencia
+============================= */
+export async function obtenerMetricasAsistencia(
+  token: string,
+  tenantId: string,
+  filters?: AttendanceMetricsFilters
+): Promise<AttendanceMetric[]> {
+  const params = new URLSearchParams();
+
+  if (filters?.device_id) params.append("device_id", filters.device_id);
+  if (filters?.employee_id) params.append("employee_id", filters.employee_id);
+  if (filters?.recognition_successful !== undefined)
+    params.append("recognition_successful", String(filters.recognition_successful));
+  if (filters?.rejected_by_user !== undefined)
+    params.append("rejected_by_user", String(filters.rejected_by_user));
+  if (filters?.start_timestamp)
+    params.append("start_timestamp", String(filters.start_timestamp));
+  if (filters?.end_timestamp)
+    params.append("end_timestamp", String(filters.end_timestamp));
+  if (filters?.limit)
+    params.append("limit", String(filters.limit));
+
+  const queryString = params.toString();
+  const url = `${API_URL}/attendance/metrics${queryString ? `?${queryString}` : ""}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "X-Tenant-ID": tenantId,
+    },
+  });
+  await throwIfNotOk(res);
+  const data: AttendanceMetricsResponse = await res.json();
+  return data.metrics;
 }

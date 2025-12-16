@@ -75,6 +75,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
               Dispositivos
             </NavLink>
           </MenuItem>
+          <MenuItem>
+            <NavLink to="/metrics" onClick={handleNavigate}>
+              Métricas
+            </NavLink>
+          </MenuItem>
         </Menu>
       </SidebarContainer>
 

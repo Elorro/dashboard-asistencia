@@ -10,7 +10,8 @@ import Sidebar from "./components/sidebar";
 import Header from "./components/header";
 import Dashboard from "./components/dashboard";
 import WorkerList from "./components/workerList";
-import Devices from "./components/devices"; // ✅ Nueva vista
+import Devices from "./components/devices";
+import Metrics from "./components/metrics/Metrics";
 
 import Login from "./components/sign-in-form/Login";
 import Register from "./components/sign-up-form/Register";
@@ -115,6 +116,33 @@ const App: React.FC = () => {
 
                 <ContentSection>
                   <Devices />
+                </ContentSection>
+              </MainContent>
+            </AppContainer>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 📊 Métricas de Reconocimiento */}
+      <Route
+        path="/metrics"
+        element={
+          <ProtectedRoute>
+            <AppContainer>
+              <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
+              <MainContent $sidebarOpen={isSidebarOpen}>
+                <Header />
+                <ToggleButton
+                  $sidebarOpen={isSidebarOpen}
+                  onClick={toggleSidebar}
+                  type="button"
+                >
+                  {isSidebarOpen ? "⮜" : "⮞"}
+                </ToggleButton>
+
+                <ContentSection>
+                  <Metrics />
                 </ContentSection>
               </MainContent>
             </AppContainer>
