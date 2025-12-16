@@ -61,6 +61,29 @@ export interface DeviceRegisterResponse {
   };
 }
 
+export interface Device {
+  device_id: string;
+  device_name: string;
+  device_model: string;
+  registered_at: number;
+  last_sync_at: number;
+  is_active: boolean;
+  pending_records: number;
+}
+
+export interface DevicesListResponse {
+  devices: Device[];
+}
+
+export interface DeactivateDevicePayload {
+  reason: string;
+}
+
+export interface DeactivateDeviceResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface DashboardMetrics {
   totalRegistrados: number;
   registradosUltimos7: number;
@@ -281,6 +304,41 @@ export async function registrarDispositivo(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+  });
+  await throwIfNotOk(res);
+  return res.json();
+}
+
+export async function obtenerDispositivos(
+  token: string,
+  tenantId: string
+): Promise<Device[]> {
+  const res = await fetch(`${API_URL}/admin/devices`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "X-Tenant-ID": tenantId,
+    },
+  });
+  await throwIfNotOk(res);
+  const data: DevicesListResponse = await res.json();
+  return data.devices;
+}
+
+export async function desactivarDispositivo(
+  deviceId: string,
+  token: string,
+  tenantId: string,
+  reason: string
+): Promise<DeactivateDeviceResponse> {
+  const res = await fetch(`${API_URL}/admin/devices/${deviceId}/deactivate`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "X-Tenant-ID": tenantId,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ reason }),
   });
   await throwIfNotOk(res);
   return res.json();
