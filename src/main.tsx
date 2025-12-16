@@ -7,7 +7,6 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 
-import { AuthProvider } from "./context/AuthContext";
 import { theme } from "./theme";
 import GlobalStyle from "./styles/GlobalStyles";
 import App from "./App";
@@ -28,11 +27,8 @@ root.render(
 
       {/* Enrutamiento con React Router */}
       <BrowserRouter>
-        {/* Proveedor de autenticación (maneja login, logout y sesión global) */}
-        <AuthProvider>
-          {/* Componente principal de la aplicación */}
-          <App />
-        </AuthProvider>
+        {/* Componente principal de la aplicación */}
+        <App />
       </BrowserRouter>
     </ThemeProvider>
   </React.StrictMode>

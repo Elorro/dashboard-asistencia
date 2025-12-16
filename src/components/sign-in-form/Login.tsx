@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import type { ChangeEvent } from "react";
-import type { FormEvent } from "react";
-import { useAuth } from "../../context/AuthContext";
+import React, { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 import { Link } from "react-router-dom";
 import {
   AuthContainer,
@@ -19,11 +19,28 @@ interface Errors {
   password?: string;
 }
 
+const unknownError = "No se pudo iniciar sesión. Intenta nuevamente.";
+
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+  const clearError = useAuthStore((state) => state.clearError);
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errors, setErrors] = useState<Errors>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGeneralError(error);
+  }, [error]);
+
+  useEffect(() => {
+    return () => {
+      clearError();
+    };
+  }, [clearError]);
 
   const validateForm = (): boolean => {
     const newErrors: Errors = {};
@@ -39,11 +56,38 @@ const Login: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      login(email, password);
+    if (!validateForm()) return;
+
+    setGeneralError(null);
+
+    try {
+      await login({ email, password });
+      navigate("/");
+    } catch (err) {
+      if (err instanceof Error && err.message) {
+        setGeneralError(err.message);
+        return;
+      }
+      setGeneralError(unknownError);
     }
+  };
+
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (errors.email) {
+      setErrors((prev) => ({ ...prev, email: undefined }));
+    }
+    if (generalError) setGeneralError(null);
+    setEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (errors.password) {
+      setErrors((prev) => ({ ...prev, password: undefined }));
+    }
+    if (generalError) setGeneralError(null);
+    setPassword(e.target.value);
   };
 
   return (
@@ -60,9 +104,7 @@ const Login: React.FC = () => {
             type="email"
             placeholder="Correo electrónico"
             value={email}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setEmail(e.target.value)
-            }
+            onChange={handleEmailChange}
             className={errors.email ? "error" : ""}
           />
           {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
@@ -71,14 +113,16 @@ const Login: React.FC = () => {
             type="password"
             placeholder="Contraseña"
             value={password}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setPassword(e.target.value)
-            }
+            onChange={handlePasswordChange}
             className={errors.password ? "error" : ""}
           />
           {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
 
-          <button type="submit">Entrar</button>
+          {generalError && <ErrorMessage>{generalError}</ErrorMessage>}
+
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Ingresando..." : "Entrar"}
+          </button>
         </StyledForm>
         <SwitchText>
           ¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link>

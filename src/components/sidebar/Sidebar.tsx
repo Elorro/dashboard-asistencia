@@ -11,7 +11,8 @@ import {
   Menu,
   MenuItem,
   Overlay,
-} from "./SidebarStyles";
+} from "./Sidebar.styles";
+import { NavLink } from "react-router-dom";
 import logo from "../../assets/sioma.svg";
 
 /* ============================
@@ -26,11 +27,16 @@ interface SidebarProps {
    Componente principal
 ============================ */
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
-  const [isMobile, setIsMobile] = React.useState<boolean>(
-    window.innerWidth <= 768
-  );
+  const [isMobile, setIsMobile] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.innerWidth <= 768;
+  });
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
@@ -49,20 +55,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       {/* ============================
           Sidebar deslizante
       ============================ */}
-      <SidebarContainer sidebarOpen={isOpen}>
+      <SidebarContainer $sidebarOpen={isOpen}>
         <LogoImg src={logo} alt="Logo SIOMA" />
         <Title>Panel de Control</Title>
 
         <Menu>
           <MenuItem>
-            <a href="#metrics" onClick={handleNavigate}>
-              Métricas
-            </a>
+            <NavLink to="/" onClick={handleNavigate}>
+              Dashboard
+            </NavLink>
           </MenuItem>
           <MenuItem>
-            <a href="#grafico" onClick={handleNavigate}>
-              Asistencias
-            </a>
+            <NavLink to="/workers" onClick={handleNavigate}>
+              Trabajadores
+            </NavLink>
+          </MenuItem>
+          <MenuItem>
+            <NavLink to="/devices" onClick={handleNavigate}>
+              Dispositivos
+            </NavLink>
           </MenuItem>
         </Menu>
       </SidebarContainer>
@@ -70,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       {/* ============================
           Overlay solo visible en móvil
       ============================ */}
-      <Overlay visible={isMobile && isOpen} onClick={toggleSidebar} />
+      <Overlay $visible={isMobile && isOpen} onClick={toggleSidebar} />
     </>
   );
 };

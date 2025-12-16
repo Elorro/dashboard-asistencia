@@ -9,11 +9,11 @@ import styled from "styled-components";
    Tipos
 ============================ */
 interface SidebarContainerProps {
-  sidebarOpen: boolean;
+  $sidebarOpen: boolean;
 }
 
 interface OverlayProps {
-  visible: boolean;
+  $visible: boolean;
 }
 
 /* ============================
@@ -36,7 +36,7 @@ export const SidebarContainer = styled.aside<SidebarContainerProps>`
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
 
   /* Animación suave al abrir/cerrar */
-  transform: translateX(${({ sidebarOpen }) => (sidebarOpen ? "0" : "-100%")});
+  transform: translateX(${({ $sidebarOpen }) => ($sidebarOpen ? "0" : "-100%")});
   transition: transform 0.3s ease-in-out;
 
   z-index: 1000;
@@ -105,7 +105,7 @@ export const MenuItem = styled.li`
    Overlay (fondo oscuro móvil)
 ============================ */
 export const Overlay = styled.div<OverlayProps>`
-  display: ${({ visible }) => (visible ? "block" : "none")};
+  display: ${({ $visible }) => ($visible ? "block" : "none")};
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);

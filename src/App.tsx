@@ -1,77 +1,130 @@
 // ================================
 // 📁 src/App.tsx
-// Componente principal de la aplicación (enrutamiento y estructura base)
+// Aplicación principal con routing y layout persistente
 // ================================
 
 import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Sidebar from "./components/sidebar/Sidebar";
-import Header from "./components/header/Header";
-import Dashboard from "./components/dashboard/Dashboard";
-import WorkerList from "./components/workerList/WorkerList";
+
+import Sidebar from "./components/sidebar";
+import Header from "./components/header";
+import Dashboard from "./components/dashboard";
+import WorkerList from "./components/workerList";
+import Devices from "./components/devices"; // ✅ Nueva vista
+
 import Login from "./components/sign-in-form/Login";
 import Register from "./components/sign-up-form/Register";
 import ProtectedRoute from "./routes/ProtectedRoute";
+
 import {
   AppContainer,
   MainContent,
   ContentSection,
   ToggleButton,
-} from "./AppStyles"; // 🎨 Estilos del layout (ver más abajo)
-
+} from "./AppStyles";
 
 // ✅ Componente principal
 const App: React.FC = () => {
-  // Estado para controlar si la Sidebar está abierta o cerrada
+  // Estado global del sidebar
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
-  // Alterna visibilidad de la Sidebar
+  // Alternar sidebar
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
-  console.log("✅ App.tsx se está renderizando");
-
   return (
-    <>
-      {/* 🧭 Definición de rutas */}
-      <Routes>
-        {/* 🔓 Rutas públicas */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    <Routes>
+      {/* 🔓 Rutas públicas */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-        {/* 🔐 Ruta protegida principal */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <AppContainer>
-                {/* 🧭 Sidebar con toggle */}
-                <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      {/* 🔐 Área protegida — usa layout completo */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <AppContainer>
+              {/* 🧭 Sidebar */}
+              <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
-                {/* 🧱 Contenido principal dinámico */}
-                <MainContent sidebarOpen={isSidebarOpen}>
-                  <Header />
+              {/* 🧱 Contenido principal */}
+              <MainContent $sidebarOpen={isSidebarOpen}>
+                <Header />
 
-                  {/* Botón flotante para mostrar/ocultar la Sidebar */}
-                  <ToggleButton onClick={toggleSidebar}>
-                    {isSidebarOpen ? "⮜" : "⮞"}
-                  </ToggleButton>
+                {/* Botón flotante */}
+                <ToggleButton
+                  $sidebarOpen={isSidebarOpen}
+                  onClick={toggleSidebar}
+                  type="button"
+                >
+                  {isSidebarOpen ? "⮜" : "⮞"}
+                </ToggleButton>
 
-                  <ContentSection>
-                    <Dashboard />
-                    <div style={{ marginTop: "40px" }}>
-                      <WorkerList />
-                    </div>
-                  </ContentSection>
-                </MainContent>
-              </AppContainer>
-            </ProtectedRoute>
-          }
-        />
+                <ContentSection>
+                  <Dashboard />
+                </ContentSection>
+              </MainContent>
+            </AppContainer>
+          </ProtectedRoute>
+        }
+      />
 
-        {/* 🔁 Redirección por defecto */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </>
+      {/* 🧑‍🤝‍🧑 Trabajadores */}
+      <Route
+        path="/workers"
+        element={
+          <ProtectedRoute>
+            <AppContainer>
+              <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
+              <MainContent $sidebarOpen={isSidebarOpen}>
+                <Header />
+                <ToggleButton
+                  $sidebarOpen={isSidebarOpen}
+                  onClick={toggleSidebar}
+                  type="button"
+                >
+                  {isSidebarOpen ? "⮜" : "⮞"}
+                </ToggleButton>
+
+                <ContentSection>
+                  <WorkerList />
+                </ContentSection>
+              </MainContent>
+            </AppContainer>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 📟 Dispositivos */}
+      <Route
+        path="/devices"
+        element={
+          <ProtectedRoute>
+            <AppContainer>
+              <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+
+              <MainContent $sidebarOpen={isSidebarOpen}>
+                <Header />
+                <ToggleButton
+                  $sidebarOpen={isSidebarOpen}
+                  onClick={toggleSidebar}
+                  type="button"
+                >
+                  {isSidebarOpen ? "⮜" : "⮞"}
+                </ToggleButton>
+
+                <ContentSection>
+                  <Devices />
+                </ContentSection>
+              </MainContent>
+            </AppContainer>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 🔁 Redirección por defecto */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 };
 

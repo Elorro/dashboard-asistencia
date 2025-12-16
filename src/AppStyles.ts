@@ -2,60 +2,60 @@ import styled from "styled-components";
 
 export const AppContainer = styled.div`
   display: flex;
-  min-height: 100vh;
-  background: ${({ theme }) => theme.colors.background};
-  transition: all 0.3s ease;
+  height: 100vh;
+  overflow: hidden;
 `;
 
-/* ============================
-   Contenido principal dinámico
-============================ */
-export const MainContent = styled.main<{ sidebarOpen: boolean }>`
+export const MainContent = styled.main<{ $sidebarOpen: boolean }>`
   flex: 1;
-  transition: margin-left 0.3s ease, width 0.3s ease;
-  padding: 20px;
-
-  /* ✅ Cuando la sidebar está visible */
-  margin-left: ${({ sidebarOpen }) => (sidebarOpen ? "250px" : "0")};
-  width: ${({ sidebarOpen }) => (sidebarOpen ? "calc(100% - 250px)" : "100%")};
+  margin-left: ${({ $sidebarOpen }) => ($sidebarOpen ? "250px" : "0")};
+  transition: margin-left 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  background: ${({ theme }) => theme.colors.background};
+  min-height: 100vh;
 
   @media (max-width: 768px) {
     margin-left: 0;
-    width: 100%;
   }
 `;
 
-/* ============================
-   Sección del contenido
-============================ */
 export const ContentSection = styled.section`
-  margin-top: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
 `;
 
-/* ============================
-   Botón flotante de toggle
-============================ */
-export const ToggleButton = styled.button`
+export const ToggleButton = styled.button<{ $sidebarOpen: boolean }>`
   position: fixed;
-  top: 20px;
-  left: 10px;
+  top: 15px;
+  left: ${({ $sidebarOpen }) => ($sidebarOpen ? "270px" : "20px")};
+  z-index: 2000;
   background: ${({ theme }) => theme.colors.primary};
   color: white;
   border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 18px;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 1.4rem;
   cursor: pointer;
-  z-index: 2000;
-  box-shadow: ${({ theme }) => theme.shadow};
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.primaryDark};
+    background-color: ${({ theme }) => theme.colors.primaryDark};
+    transform: scale(1.05);
   }
 
-  @media (min-width: 769px) {
-    left: ${({ theme }) => theme.spacing(2)};
+  @media (max-width: 1024px) {
+    left: ${({ $sidebarOpen }) => ($sidebarOpen ? "230px" : "20px")};
+  }
+
+  @media (max-width: 768px) {
+    left: 15px;
+    top: 18px;
   }
 `;

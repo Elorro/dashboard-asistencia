@@ -1,254 +1,298 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   obtenerTrabajadores,
-  crearTrabajador,
+  actualizarTrabajador,
   eliminarTrabajador,
-  Trabajador,
+  type Trabajador,
+  type TrabajadorUpdatePayload,
 } from "../../api/asistenciaService";
 import {
   WorkerListContainer,
-  WorkerForm,
-  WorkerButton,
   WorkerTable,
+  WorkerButton,
   Modal,
   ModalContent,
   PhotoGallery,
   Photo,
   CloseButton,
-} from "../workerList/WorkerListStyles";
+  Toolbar,
+  SearchInput,
+  PhotoCluster,
+  PhotoThumb,
+  DetailGrid,
+  ErrorText,
+  Subtitle,
+} from "../workerList/WorkerList.styles";
 
-// ==============================
-// Tipado local
-// ==============================
-interface NuevoTrabajador extends Omit<Trabajador, "image_urls"> {
-  image_urls: string[];
-}
+const normalize = (value: string) => value.trim().toLowerCase();
 
-// ==============================
-// Componente principal
-// ==============================
+const buildSearchText = (trabajador: Trabajador): string =>
+  [
+    trabajador.id,
+    trabajador.document_id,
+    trabajador.first_name,
+    trabajador.last_name,
+    trabajador.email,
+  ]
+    .join(" ")
+    .toLowerCase();
+
 const WorkerList: React.FC = () => {
   const [trabajadores, setTrabajadores] = useState<Trabajador[]>([]);
-  const [nuevoTrabajador, setNuevoTrabajador] = useState<NuevoTrabajador>({
-    employee_id: "",
-    nombres: "",
-    apellidos: "",
-    departamento: "",
-    cargo: "",
-    image_urls: [],
-  });
-
+  const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<Trabajador | null>(null);
+  const [empleadoSeleccionado, setEmpleadoSeleccionado] =
+    useState<Trabajador | null>(null);
+  const [formState, setFormState] = useState<TrabajadorUpdatePayload>({});
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [exitoMensaje, setExitoMensaje] = useState<string | null>(null);
 
-  // ==============================
-  // Cargar trabajadores al iniciar
-  // ==============================
   useEffect(() => {
-    cargarTrabajadores();
+    void cargarTrabajadores();
   }, []);
 
-  const cargarTrabajadores = async (): Promise<void> => {
+  const cargarTrabajadores = async () => {
+    setLoading(true);
+    setListError(null);
     try {
       const data = await obtenerTrabajadores();
+      data.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
       setTrabajadores(data);
     } catch (error) {
       console.error("Error cargando trabajadores:", error);
+      setListError("No se pudieron cargar los trabajadores. Verifica la API.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ==============================
-  // Crear trabajador nuevo
-  // ==============================
-  const handleCrear = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await crearTrabajador(nuevoTrabajador);
-      setNuevoTrabajador({
-        employee_id: "",
-        nombres: "",
-        apellidos: "",
-        departamento: "",
-        cargo: "",
-        image_urls: [],
-      });
-      cargarTrabajadores();
-    } catch (error) {
-      console.error("Error creando trabajador:", error);
-    }
-  };
+  const filteredTrabajadores = useMemo(() => {
+    const term = normalize(searchTerm);
+    if (!term) return trabajadores;
+    return trabajadores.filter((trabajador) =>
+      buildSearchText(trabajador).includes(term)
+    );
+  }, [trabajadores, searchTerm]);
 
-  // ==============================
-  // Eliminar trabajador
-  // ==============================
-  const handleEliminar = async (id: string) => {
-    const confirm = window.confirm("¿Seguro que deseas eliminar este empleado?");
-    if (!confirm) return;
-
-    try {
-      await eliminarTrabajador(id);
-      cargarTrabajadores();
-    } catch (error) {
-      console.error("Error eliminando empleado:", error);
-    }
-  };
-
-  // ==============================
-  // Ver detalles (abre modal)
-  // ==============================
-  const verDetalles = (trabajador: Trabajador) => {
+  const abrirModal = (trabajador: Trabajador) => {
     setEmpleadoSeleccionado(trabajador);
+    setFormState({
+      first_name: trabajador.first_name,
+      last_name: trabajador.last_name,
+      email: trabajador.email,
+    });
+    setExitoMensaje(null);
+    setFormError(null);
     setModalVisible(true);
   };
 
-  // ==============================
-  // Render
-  // ==============================
+  const cerrarModal = () => {
+    setModalVisible(false);
+    setEmpleadoSeleccionado(null);
+    setFormState({});
+  };
+
+  const handleGuardarCambios = async () => {
+    if (!empleadoSeleccionado) return;
+    setSaving(true);
+    setFormError(null);
+    try {
+      await actualizarTrabajador(empleadoSeleccionado.id, formState);
+      await cargarTrabajadores();
+      setExitoMensaje("Datos actualizados correctamente.");
+    } catch (error) {
+      console.error("Error actualizando trabajador:", error);
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron actualizar los datos."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEliminar = async (id: string) => {
+    if (!window.confirm("¿Seguro que deseas eliminar este trabajador?")) {
+      return;
+    }
+    setListError(null);
+    try {
+      await eliminarTrabajador(id);
+      await cargarTrabajadores();
+    } catch (error) {
+      console.error("Error eliminando empleado:", error);
+      setListError("No se pudo eliminar al trabajador.");
+    }
+  };
+
   return (
     <WorkerListContainer>
-      <h2>Gestión de Empleados</h2>
+      <div>
+        <h2>Registrados biométricos</h2>
+        <p>Visualiza la base de empleados y actualiza sus datos cuando sea necesario.</p>
+      </div>
 
-      {/* === Formulario de creación === */}
-      <WorkerForm onSubmit={handleCrear}>
-        <input
-          placeholder="ID del empleado"
-          value={nuevoTrabajador.employee_id}
-          onChange={(e) =>
-            setNuevoTrabajador({
-              ...nuevoTrabajador,
-              employee_id: e.target.value,
-            })
-          }
-          required
+      <Toolbar>
+        <SearchInput
+          type="search"
+          placeholder="Buscar por nombre, ID, documento o correo"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
         />
-        <input
-          placeholder="Nombres"
-          value={nuevoTrabajador.nombres}
-          onChange={(e) =>
-            setNuevoTrabajador({
-              ...nuevoTrabajador,
-              nombres: e.target.value,
-            })
-          }
-          required
-        />
-        <input
-          placeholder="Apellidos"
-          value={nuevoTrabajador.apellidos}
-          onChange={(e) =>
-            setNuevoTrabajador({
-              ...nuevoTrabajador,
-              apellidos: e.target.value,
-            })
-          }
-          required
-        />
-        <input
-          placeholder="Departamento"
-          value={nuevoTrabajador.departamento}
-          onChange={(e) =>
-            setNuevoTrabajador({
-              ...nuevoTrabajador,
-              departamento: e.target.value,
-            })
-          }
-          required
-        />
-        <input
-          placeholder="Cargo"
-          value={nuevoTrabajador.cargo}
-          onChange={(e) =>
-            setNuevoTrabajador({
-              ...nuevoTrabajador,
-              cargo: e.target.value,
-            })
-          }
-          required
-        />
-
-        <WorkerButton variant="add" type="submit">
-          Agregar
+        <WorkerButton variant="primary" onClick={() => void cargarTrabajadores()}>
+          Actualizar lista
         </WorkerButton>
-      </WorkerForm>
+      </Toolbar>
 
-      {/* === Tabla de empleados === */}
-      <WorkerTable>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombres</th>
-            <th>Apellidos</th>
-            <th>Departamento</th>
-            <th>Cargo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {trabajadores.length > 0 ? (
-            trabajadores.map((t) => (
-              <tr key={t.employee_id}>
-                <td>{t.employee_id}</td>
-                <td>{t.nombres}</td>
-                <td>{t.apellidos}</td>
-                <td>{t.departamento}</td>
-                <td>{t.cargo}</td>
-                <td>
-                  <WorkerButton variant="view" onClick={() => verDetalles(t)}>
-                    🔍 Ver
-                  </WorkerButton>
-                  <WorkerButton
-                    variant="delete"
-                    onClick={() => handleEliminar(t.employee_id)}
-                  >
-                    🗑️
-                  </WorkerButton>
-                </td>
-              </tr>
-            ))
-          ) : (
+      {listError && <ErrorText>{listError}</ErrorText>}
+      {exitoMensaje && <p style={{ color: "#2e7d32" }}>{exitoMensaje}</p>}
+
+      {loading ? (
+        <p>Cargando trabajadores...</p>
+      ) : (
+        <WorkerTable>
+          <thead>
             <tr>
-              <td colSpan={6}>No hay trabajadores registrados.</td>
+              <th>Fotos</th>
+              <th>ID</th>
+              <th>Documento</th>
+              <th>Nombres</th>
+              <th>Apellidos</th>
+              <th>Correo</th>
+              <th>Registrado</th>
+              <th>Acciones</th>
             </tr>
-          )}
-        </tbody>
-      </WorkerTable>
+          </thead>
+          <tbody>
+            {filteredTrabajadores.length === 0 ? (
+              <tr>
+                <td colSpan={8}>No se encontraron trabajadores con ese criterio.</td>
+              </tr>
+            ) : (
+              filteredTrabajadores.map((trabajador) => (
+                <tr key={trabajador.id}>
+                  <td>
+                    <PhotoCluster>
+                      {trabajador.image_urls.slice(0, 3).map((url, index) => (
+                        <PhotoThumb key={index} src={url} alt={`${trabajador.first_name} ${index + 1}`} />
+                      ))}
+                    </PhotoCluster>
+                  </td>
+                  <td>{trabajador.id}</td>
+                  <td>{trabajador.document_id}</td>
+                  <td>{trabajador.first_name}</td>
+                  <td>{trabajador.last_name}</td>
+                  <td>{trabajador.email}</td>
+                  <td>
+                    {new Date(trabajador.created_at).toLocaleString("es-ES", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td>
+                    <WorkerButton variant="view" onClick={() => abrirModal(trabajador)}>
+                      Ver / Editar
+                    </WorkerButton>
+                    <WorkerButton
+                      variant="delete"
+                      onClick={() => handleEliminar(trabajador.id)}
+                    >
+                      Eliminar
+                    </WorkerButton>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </WorkerTable>
+      )}
 
-      {/* === Modal de detalles === */}
       {modalVisible && empleadoSeleccionado && (
         <Modal>
           <ModalContent>
-            <h3>Detalles del Empleado</h3>
-            <p>
-              <strong>ID:</strong> {empleadoSeleccionado.employee_id}
-            </p>
-            <p>
-              <strong>Nombre:</strong> {empleadoSeleccionado.nombres}
-            </p>
-            <p>
-              <strong>Apellido:</strong> {empleadoSeleccionado.apellidos}
-            </p>
-            <p>
-              <strong>Departamento:</strong> {empleadoSeleccionado.departamento}
-            </p>
-            <p>
-              <strong>Cargo:</strong> {empleadoSeleccionado.cargo}
-            </p>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Subtitle>Ficha del colaborador</Subtitle>
+              <CloseButton onClick={cerrarModal}>Cerrar</CloseButton>
+            </div>
 
-            <h4>Fotos de reconocimiento facial</h4>
-            <PhotoGallery>
-              {empleadoSeleccionado.image_urls &&
-              empleadoSeleccionado.image_urls.length > 0 ? (
-                empleadoSeleccionado.image_urls.map((url, i) => (
-                  <Photo key={i} src={url} alt={`Foto ${i + 1}`} />
-                ))
-              ) : (
-                <p>No hay fotos registradas.</p>
-              )}
-            </PhotoGallery>
+            <DetailGrid>
+              <label>
+                Identificador interno
+                <input value={empleadoSeleccionado.id} readOnly />
+              </label>
+              <label>
+                Documento
+                <input value={empleadoSeleccionado.document_id} readOnly />
+              </label>
+              <label>
+                Nombres
+                <input
+                  value={formState.first_name ?? ""}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      first_name: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                Apellidos
+                <input
+                  value={formState.last_name ?? ""}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      last_name: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                Correo electrónico
+                <input
+                  type="email"
+                  value={formState.email ?? ""}
+                  onChange={(event) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      email: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </DetailGrid>
 
-            <CloseButton onClick={() => setModalVisible(false)}>
-              Cerrar
-            </CloseButton>
+            <div>
+              <Subtitle>Galería biométrica</Subtitle>
+              <PhotoGallery>
+                {empleadoSeleccionado.image_urls.length === 0 ? (
+                  <p>Sin fotos asociadas.</p>
+                ) : (
+                  empleadoSeleccionado.image_urls.map((url, index) => (
+                    <Photo key={index} src={url} alt={`Foto ${index + 1}`} />
+                  ))
+                )}
+              </PhotoGallery>
+            </div>
+
+            {formError && <ErrorText>{formError}</ErrorText>}
+
+            <WorkerButton
+              variant="primary"
+              onClick={handleGuardarCambios}
+              disabled={saving}
+            >
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </WorkerButton>
           </ModalContent>
         </Modal>
       )}

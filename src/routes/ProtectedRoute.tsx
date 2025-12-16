@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../store/authStore";
 import type { ReactNode } from "react";
 
 // ===========================================
@@ -14,11 +14,24 @@ interface ProtectedRouteProps {
 // 🔹 Componente funcional protegido
 // ===========================================
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const hydrateProfile = useAuthStore((state) => state.hydrateProfile);
 
-  if (!user) {
-    // Si no hay usuario autenticado → redirige al login
+  useEffect(() => {
+    if (accessToken && !user) {
+      void hydrateProfile();
+    }
+  }, [accessToken, user, hydrateProfile]);
+
+  if (!accessToken) {
+    // Si no hay sesión → redirige al login
     return <Navigate to="/login" replace />;
+  }
+
+  if (isLoading && !user) {
+    return <div>Cargando sesión...</div>;
   }
 
   // Si hay usuario → muestra el contenido protegido

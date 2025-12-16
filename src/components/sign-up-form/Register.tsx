@@ -1,7 +1,7 @@
-import React, { useState  } from "react";
-import type { ChangeEvent } from "react";
-import type { FormEvent } from "react";
-import { useAuth } from "../../context/AuthContext";
+import React, { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 import { Link } from "react-router-dom";
 import {
   AuthContainer,
@@ -32,8 +32,14 @@ interface Errors {
   confirmPassword?: string;
 }
 
+const unknownError = "No fue posible completar el registro.";
+
 const Register: React.FC = () => {
-  const { register } = useAuth();
+  const registerUser = useAuthStore((state) => state.register);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+  const clearError = useAuthStore((state) => state.clearError);
+  const navigate = useNavigate();
   const [form, setForm] = useState<RegisterForm>({
     nombres: "",
     apellidos: "",
@@ -43,8 +49,23 @@ const Register: React.FC = () => {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState<Errors>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setGeneralError(error);
+  }, [error]);
+
+  useEffect(() => {
+    return () => {
+      clearError();
+    };
+  }, [clearError]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (errors[e.target.name as keyof Errors]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
+    }
+    if (generalError) setGeneralError(null);
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -73,11 +94,26 @@ const Register: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      register(form);
-      alert("Administrador registrado correctamente");
+    if (!validateForm()) return;
+
+    setGeneralError(null);
+
+    try {
+      await registerUser({
+        nombres: form.nombres,
+        apellidos: form.apellidos,
+        email: form.email,
+        password: form.password,
+      });
+      navigate("/login", { replace: true });
+    } catch (err) {
+      if (err instanceof Error && err.message) {
+        setGeneralError(err.message);
+        return;
+      }
+      setGeneralError(unknownError);
     }
   };
 
@@ -155,7 +191,11 @@ const Register: React.FC = () => {
             <ErrorMessage>{errors.confirmPassword}</ErrorMessage>
           )}
 
-          <button type="submit">Registrar</button>
+          {generalError && <ErrorMessage>{generalError}</ErrorMessage>}
+
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Registrando..." : "Registrar"}
+          </button>
         </StyledForm>
         <SwitchText>
           ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
